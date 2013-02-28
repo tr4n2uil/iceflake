@@ -1,0 +1,39 @@
+iceFlake
+Open Compute Platform
+
+Vibhaj Rajan <vibhaj8@gmail.com>
+
+Subsystems
+	DB: 	Database
+	IO: 	Input/Output
+	NS: 	Name Service
+	RT: 	Runtime
+	FN:		Callback
+	SI:		Smart Interface
+	UI:		User Interface
+
+Definitions
+	Service: 	Functions with single argument - a Map: an array of key-value pairs, 
+				returning a Map with all results
+				Return Map must contain Status Keys ( 'valid', 'msg', 'details' )
+	Message:	Standard Service Invocation Definition ( SSID )
+	Workflow:	Array of Messages
+	Navigator:	Serialized SSID String without having array as values
+	State:		Central State Registry
+	Config:		Central Configuration Registry
+
+Inspirations:
+	DB:		Codefest 2010 Website ( JR Harshath )
+	IO:		Yahoo! Buzz
+	NS:		TPR Executive
+	RT:		GSoC 2011 DSpace RESTClient
+	FN:		Yahoo! Buzz
+	SI:		FireSpark
+	UI:		Orbitnote
+
+History:
+	SnowBlozm
+	FireSpark
+	ThunderSky
+	CirrusBolt
+	CosmicAura

@@ -1,0 +1,33 @@
+<html>
+	<head>
+		<title>iceFlake JS Demo</title>
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" type="text/javascript"></script>
+		<script src="iceflake.js" type="text/javascript"></script>
+		<script type="text/javascript">
+			iE.config.mappings = {
+				al : [ iE.ui.alert, [ 'data' ] ],
+				ax : [ iE.io.ajax ],
+				rl : [ iE.ui.reload, [ 'next' ] ],
+				html : [ iE.ui.content, [ 'act', 'anm', 'dur' ] ],
+				pl : [ iE.si.pool ],
+				ld : [ iE.si.load, [ 'sel', 'pnl', 'act', 'anm', 'dur' ] ]
+			}
+			iE.config.loaderhtml = '<span class="loader">Loading ...</span>';
+			iE.io.event( {} );
+			iE.fn.onhistory();
+		</script>
+	</head>
+	<body>
+		<div id="test">iceFlake JS Demo</div>
+		<div id="test2">Krishnakripa</div>
+		
+		<br />
+		
+		<div id="test3">
+			<input class="data" type="hidden" name="url1" value="Krishna"/>
+			<a id="atest" href="test.html" class="trigger lcntr" data-trigger="rt://ld/#test3/#resultpnl/all/fadein/1500/~/cf/true/dsel/.data/url/%2Ftest.html/type/html/args/[root]/" data-history="href">Test Smart Interface Load</a>
+		</div>
+
+		<div id="resultpnl"></div>
+	</body>
+</html>
