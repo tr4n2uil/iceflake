@@ -1,4 +1,4 @@
-// Initialize iEngine JS
+// Initialize iceFlake JS
 
 var iE = {
    fn: {},
