@@ -4,10 +4,11 @@ Open Compute Platform
 Vibhaj Rajan <vibhaj8@gmail.com>
 
 Subsystems
-	DB: 	Database
-	IO: 	Input/Output
-	NS: 	Name Service
-	RT: 	Runtime
+	DB:		Database
+	IO:		Input/Output
+	NS:		Name Service
+	RT:		Runtime
+	JN:		Journal
 	FN:		Callback
 	SI:		Smart Interface
 	UI:		User Interface
@@ -27,6 +28,7 @@ Inspirations:
 	IO:		Yahoo! Buzz
 	NS:		TPR Executive
 	RT:		GSoC 2011 DSpace RESTClient
+	JN:		Yahoo! Graph
 	FN:		Yahoo! Buzz
 	SI:		FireSpark
 	UI:		Orbitnote
