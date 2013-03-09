@@ -14,7 +14,7 @@
 function ns_resolve( $in ){
 	global $iconfig;
 
-	$nsconf = get( $iconfig, get( $in, 'key', 'ns' ), false, '@ns.resolve.ns_resolve' );
+	$nsconf = get( $iconfig, get( $in, 'nskey', 'ns' ), false, '@ns.resolve.ns_resolve' );
 	$nsmap = $nsconf[ 'map' ];
 
 	require_once( IEROOT."ns/$nsmap.php" );

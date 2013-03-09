@@ -13,7 +13,7 @@
 				ld : [ iE.si.load, [ 'sel', 'pnl', 'act', 'anm', 'dur' ] ]
 			}
 			iE.config.loaderhtml = '<span class="loader">Loading ...</span>';
-			iE.io.event( {} );
+			iE.io.event();
 			iE.fn.onhistory();
 		</script>
 	</head>
@@ -22,11 +22,18 @@
 		<div id="test2">Krishnakripa</div>
 		
 		<br />
-		
+
 		<div id="test3">
 			<input class="data" type="hidden" name="url1" value="Krishna"/>
-			<a id="atest" href="test.html" class="trigger lcntr" data-trigger="rt://ld/#test3/#resultpnl/all/fadein/1500/~/cf/true/dsel/.data/url/%2Ftest.html/type/html/args/[root]/" data-history="href">Test Smart Interface Load</a>
+			<a id="atest" href="test.html" class="trigger lcntr" data-trigger="rt://ld/#test3/#resultpnl/all/fadein/1500/~/cf/true/dsel/.data/url/%2Ftest.html/type/html/args/[root]/" data-history="href">Test Smart Interface : Load 404</a>
 		</div>
+		<br />
+		<div id="test4">
+			<input class="data" type="hidden" name="url1" value="Krishna"/>
+			<a id="atest1" href="test1.html" class="trigger lcntr" data-trigger="rt://ld/#test4/#resultpnl/all/fadein/1500/~/cf/true/dsel/.data/url/iceflake.js/type/html/args/[root]/" data-history="href">Test Smart Interface : Load 200</a>
+		</div>
+
+		<br />
 
 		<div id="resultpnl"></div>
 	</body>

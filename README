@@ -16,11 +16,11 @@ Definitions
 	Service: 	Functions with single argument - a Map: an array of key-value pairs, 
 				returning a Map with all results
 				Return Map must contain Status Keys ( 'valid', 'msg', 'details' )
-	Message:	Standard Service Invocation Definition ( SSID )
-	Workflow:	Array of Messages
-	Navigator:	Serialized SSID String without having array as values
-	State:		Central State Registry
-	Config:		Central Configuration Registry
+	Message:	Service Invocation Definition ( SID ) for Service Runtime Invocation ( SRI )
+	Workflow:	Array of Messages for Service Flow Orchestration ( SFO )
+	Navigator:	String Encoding for Workflow ( SEW )  
+	State:		Instance State Registry
+	Config:		Instance Configuration Registry
 
 Inspirations:
 	DB:		Codefest 2010 Website ( JR Harshath )

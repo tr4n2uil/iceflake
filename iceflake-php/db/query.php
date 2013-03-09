@@ -31,7 +31,7 @@ function db_query( $in ){
 	global $iconfig;
 
 	$query = get( $in, 'query', false, '@db.query.db_query' );
-	$cntype = get( $iconfig, get( $in, 'key', 'db' ), false, '@db.query.db_query' );
+	$cntype = get( $iconfig, get( $in, 'dbkey', 'db' ), false, '@db.query.db_query' );
 	$cntype = $cntype[ 'type' ];
 
 	require_once( IEROOT."db/$cntype.php" );

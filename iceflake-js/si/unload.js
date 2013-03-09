@@ -12,6 +12,7 @@
 iE.fn.unload = function( $in, $data, $request, $status ){
 	var $sel = get( $in, 'sel', false );
 	var $workflow = [];
+	var $valid = $in[ 'valid' ] == undefined ? true : $in[ 'valid' ];
 
 	if( $in[ 'valid' ] ){
 		switch( get( $in, 'chng', false ) ){
@@ -70,9 +71,9 @@ iE.fn.unload = function( $in, $data, $request, $status ){
 
 	iE.rt.execute( $in );
 	
-	$in[ 'valid' ] = false;
+	$in[ 'valid' ] = $valid;
 	if( !$in[ 'root' ].attr( 'data-workflow' ) ){
-		$in[ 'root' ].attr( 'data-workflow', 'rt://html/~/input/{data:data,el:pnl,act:act,anm:anm,dur:dur}/-/html/~/input/{data:data,pnl:el}/role/false/' );
+		$in[ 'root' ].attr( 'data-workflow', 'rt://html/~/input/{data:data,pnl:el,act:act,anm:anm,dur:dur}/-/html/~/input/{data:data,pnl:el}/role/false/' );
 	}
 	
 	return iE.fn.invoke( $in, $data, $request, $status );

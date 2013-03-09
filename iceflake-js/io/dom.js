@@ -23,12 +23,18 @@ iE.io.dom = function( $in ){
 		}
 		
 		var $params = $form.serialize();
-		var $d= new Date();
-		$params = $params + '&_ts=' +  $d.getTime();
+		if( get( $in, 'ts', false ) ){
+			var $d= new Date();
+			$params = $params + '&_ts=' +  $d.getTime();
+		}
 	}
 	else {
-		var $d = new Date();
-		var $params = '_ts=' +  $d.getTime();
+		var $params = '_ts=ts';
+
+		if( get( $in, 'ts', false ) ){
+			var $d = new Date();
+			$params = '_ts=' +  $d.getTime();
+		}
 		
 		var serialize = function( $index, $el ){
 			if( $( this ).attr( 'name' ) || false ){

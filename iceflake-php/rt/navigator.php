@@ -17,7 +17,9 @@ function rt_navigator( $in ){
 	$str = get( $in, 'idef', false, '@rt.navigator.rt_navigator' );
 	$_in = explode(  '/-/', $str );
 
+	$total = 0;
 	foreach ( $_in as $j => $str ) {
+		$total++;
 		$idef = array();
 		
 		$args = explode( '~', $str );
@@ -45,7 +47,7 @@ function rt_navigator( $in ){
 		$_in[ $j ] = $idef;
 	}
 
-	$in[ 'idef' ] = $_in;
+	$in[ 'idef' ] = ( $total == 1 ) ? $_in[ 0 ] : $_in;
 	
 	$in = rt_execute( $in );
 	//unset( $in[ 'idef' ] );
@@ -89,7 +91,7 @@ function rt_parse( $data ){
 					return false;
 				
 			default:
-				return $data;
+				return urldecode( $data );
 		}
 	}
 }

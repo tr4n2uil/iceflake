@@ -11,7 +11,7 @@ function get_conn( $in ){
 	global $iconfig;
 	global $istate;
 
-	$conn = get( $iconfig, get( $in, 'key', 'db' ), false, '@db.mysqli.get_conn' );
+	$conn = get( $iconfig, get( $in, 'dbkey', 'db' ), false, '@db.mysqli.get_conn' );
 	$conn = get( $istate, get( $conn, 'conn', 'conn' ), false, '@db.mysqli.get_conn' );
 
 	return $conn;
@@ -26,7 +26,7 @@ function db_connect( $in ){
 	global $iconfig;
 	global $istate;
 
-	$conf = get( $iconfig, get( $in, 'key', 'db' ), false, '@db.mysqli.db_connect' );
+	$conf = get( $iconfig, get( $in, 'dbkey', 'db' ), false, '@db.mysqli.db_connect' );
 
 	if( get( $conf, 'persist', false ) )
 		$conn = mysqli_connect( 'p:'.$conf[ 'host' ], $conf[ 'user' ], $conf[ 'pass' ], $conf[ 'database' ] );
@@ -117,7 +117,7 @@ function db_close( $in ){
 	$conn = get_conn( $in );
 	$conn->close();
 
-	$conf = get( $iconfig, get( $in, 'key', 'db' ), false, '@db.mysqli.db_close' );
+	$conf = get( $iconfig, get( $in, 'dbkey', 'db' ), false, '@db.mysqli.db_close' );
 	$key = get( $conf, 'conn', 'conn' );
 	unset( $istate[ $key ] );
 

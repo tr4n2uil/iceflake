@@ -38,6 +38,11 @@ function rt_message( $in ){
 			$idef = set( $idef, $value, $val );
 	}
 
+	// conf
+	foreach ( get( $mapping, 3, array() ) as $key => $value ) {
+		$idef = set( $idef, $key, $value );
+	}
+
 	// input
 	foreach ( get( $idef, 'input', array() ) as $key => $value ) {
 		$idef = set( $idef, $value, get( $in, $key, false ) );

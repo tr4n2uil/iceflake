@@ -11,13 +11,14 @@
 **/
 iE.fn.invoke = function( $in, $data, $request, $status ){
 	$in[ 'data' ] = $data;
+	var $valid = $in[ 'valid' ] == undefined ? true : $in[ 'valid' ];
 	var $cache = get( $in, 'cache-key', false );
 
 	var $workflow = get( $in, 'workflow', false );
 	if( $workflow ){
 		$in[ 'idef' ] = $workflow;
 		$in = iE.rt.execute( $in );
-		if( !$in[ 'valid' ] ){
+		if( !$in[ 'result' ][ 'valid' ] ){
 			die( JSON.stringify( $in ) );
 			return false;
 		}
@@ -30,7 +31,7 @@ iE.fn.invoke = function( $in, $data, $request, $status ){
 		}
 	}
 	
-	if( $cache ){
+	if( $valid && $cache ){
 		iE.state[ $cache ] = $data;
 	}
 	

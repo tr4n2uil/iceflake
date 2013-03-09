@@ -154,12 +154,18 @@ iE.io.dom = function( $in ){
 		}
 		
 		var $params = $form.serialize();
-		var $d= new Date();
-		$params = $params + '&_ts=' +  $d.getTime();
+		if( get( $in, 'ts', false ) ){
+			var $d= new Date();
+			$params = $params + '&_ts=' +  $d.getTime();
+		}
 	}
 	else {
-		var $d = new Date();
-		var $params = '_ts=' +  $d.getTime();
+		var $params = '_ts=ts';
+
+		if( get( $in, 'ts', false ) ){
+			var $d = new Date();
+			$params = '_ts=' +  $d.getTime();
+		}
 		
 		var serialize = function( $index, $el ){
 			if( $( this ).attr( 'name' ) || false ){
@@ -218,6 +224,7 @@ iE.io.dom = function( $in ){
  *	@result 
 **/
 iE.io.event = function( $in ){
+	$in = $in || {};
 	$( get( $in, 'root', document ) ).on( 
 		get( $in, 'event', 'click' ), 
 		get( $in, 'sel', '.trigger' ), 
@@ -1036,13 +1043,14 @@ iE.fn.onhistory = function(){
 **/
 iE.fn.invoke = function( $in, $data, $request, $status ){
 	$in[ 'data' ] = $data;
+	var $valid = $in[ 'valid' ] == undefined ? true : $in[ 'valid' ];
 	var $cache = get( $in, 'cache-key', false );
 
 	var $workflow = get( $in, 'workflow', false );
 	if( $workflow ){
 		$in[ 'idef' ] = $workflow;
 		$in = iE.rt.execute( $in );
-		if( !$in[ 'valid' ] ){
+		if( !$in[ 'result' ][ 'valid' ] ){
 			die( JSON.stringify( $in ) );
 			return false;
 		}
@@ -1055,7 +1063,7 @@ iE.fn.invoke = function( $in, $data, $request, $status ){
 		}
 	}
 	
-	if( $cache ){
+	if( $valid && $cache ){
 		iE.state[ $cache ] = $data;
 	}
 	
@@ -1287,6 +1295,7 @@ iE.si.pool = function( $in ){
 iE.fn.unload = function( $in, $data, $request, $status ){
 	var $sel = get( $in, 'sel', false );
 	var $workflow = [];
+	var $valid = $in[ 'valid' ] == undefined ? true : $in[ 'valid' ];
 
 	if( $in[ 'valid' ] ){
 		switch( get( $in, 'chng', false ) ){
@@ -1345,9 +1354,9 @@ iE.fn.unload = function( $in, $data, $request, $status ){
 
 	iE.rt.execute( $in );
 	
-	$in[ 'valid' ] = false;
+	$in[ 'valid' ] = $valid;
 	if( !$in[ 'root' ].attr( 'data-workflow' ) ){
-		$in[ 'root' ].attr( 'data-workflow', 'rt://html/~/input/{data:data,el:pnl,act:act,anm:anm,dur:dur}/-/html/~/input/{data:data,pnl:el}/role/false/' );
+		$in[ 'root' ].attr( 'data-workflow', 'rt://html/~/input/{data:data,pnl:el,act:act,anm:anm,dur:dur}/-/html/~/input/{data:data,pnl:el}/role/false/' );
 	}
 	
 	return iE.fn.invoke( $in, $data, $request, $status );

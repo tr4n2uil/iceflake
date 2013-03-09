@@ -10,6 +10,7 @@
  *	@result 
 **/
 iE.io.event = function( $in ){
+	$in = $in || {};
 	$( get( $in, 'root', document ) ).on( 
 		get( $in, 'event', 'click' ), 
 		get( $in, 'sel', '.trigger' ), 
