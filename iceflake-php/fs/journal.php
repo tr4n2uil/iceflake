@@ -17,10 +17,12 @@ function array_search_lower( $key, $array, $fn = 'strcmp' ){
 }
 
 //	@helper
-function tree_next_leaf( $table, $current ){
+function tree_next_leaf( $root, $current, &$table ){
+	//$current = $root.'/'.$current;
+	$cin = $current;
 	$parent = dirname( $current );
 
-	while( $parent != '.' ){
+	while( $parent != $root ){
 		if( !isset( $table[ $parent ] ) ){
 			$files = array_slice( scandir( $parent ), 2 );
 			$table[ $parent ] = array_slice( $files, array_search( basename( $current ), $files ) );
@@ -44,50 +46,7 @@ function tree_next_leaf( $table, $current ){
 		$parent .= '/'.$table[ $parent ][ 0 ];
 	}
 
-	return $parent;
-}
-
-//	@helper
-function tree_leaves( $path1, $path2, $count = false ){
-	$len1 = strlen( $path1 );
-	$len2 = strlen( $path2 );
-	$max = $len1 < $len2 ? $len1 : $len2;
-
-	for( $i = 0; $i < $max && ( $path1[ $i ] == $path2[ $i ] ); $i++ );
-	$path = substr( $path1, 0, $i );
-
-	if( $path1[ $i ] != '/' )
-		$path = dirname( $path );
-
-	$it = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $path ) );
-	$leaves = array();
-
-	$flag = false;
-	$i = 0;
-	$start = basename( $path1 );
-	$end = basename( $path2 );
-
-	while( $it->valid() ) {
-		$file = $it->getFilename();
-
-		if( !$flag  ){
-			if( $file == $start ){
-				$flag = true;
-				$leaves[] = $file;
-				$i ++;	
-			} 
-		}
-		else {
-			$leaves[] = $file;
-			$i ++;
-			if( $file == $end || $i == $count )
-				break;
-		}
-
-		$it->next();
-	}
-
-	return $leaves;
+	return $parent == $cin ? false : $parent;
 }
 
 //	@helper 
@@ -132,6 +91,27 @@ function tree_balance( $pathfull, $node, $fn = 'strcmp' ){
 	}
 }
 
+//	@helper
+function tree_lookup( $key, $path, &$node, &$dnode, $fn = 'strcmp' ){
+	while( $files = array_slice( scandir( $node ), 2 ) ){
+		usort( $files, $fn );
+
+		$pos = array_search_lower( $key, $files, $fn );
+		if( $pos === false ){
+			$pos = count( $files ) - 1;
+		}
+
+		if( $pos == -1 )
+			break;
+
+		$node .= '/'.$files[ $pos ];
+		$dnode .= '/'.$files[ $pos ];
+		
+		if( !is_dir( $node ) )
+			break;
+	}
+}
+
 /**
  *	@service jn_init
  *	@params
@@ -171,29 +151,13 @@ function jn_data( $in ){
 	$dnode = $path.'/data';
 
 	// lookup block
-	while( $files = array_slice( scandir( $node ), 2 ) ){
-		usort( $files, $fn );
-
-		$pos = array_search_lower( $key, $files, $fn );
-		if( $pos === false ){
-			$pos = count( $files ) - 1;
-		}
-
-		if( $pos == -1 )
-			break;
-
-		$node .= '/'.$files[ $pos ];
-		$dnode .= '/'.$files[ $pos ];
-		
-		if( !is_dir( $node ) )
-			break;
-	}
+	tree_lookup( $key, $path, $node, $dnode, $fn );
 
 	if( $node == $path.'/head' ){
 		$node .= '/'.$key;
 		$dnode .= '/'.$key;
 	}
-
+	
 	// read block header
 	$head = @file_get_contents( $node );
 	if( $head )
@@ -218,7 +182,7 @@ function jn_data( $in ){
 			$nxhead = array();
 			$nxorder = array_slice( $order, $pos + 1 );
 			foreach( $nxorder as $k ){
-				$nxhead[ $k ] = $head[ $k ];
+				$nxhead[ $k ] = array( $head[ $k ][ 0 ] - $len, $head[ $k ][ 1 ] );
 				unset( $head[ $k ] );
 			}
 
@@ -270,6 +234,67 @@ function jn_data( $in ){
 	}
 
 	return success( array( 'data' => $data ), 'Valid Data JN' );
+}
+
+/**
+ *	@service jn_all
+ *	@params
+ *	@result 
+**/
+function jn_all( $in ){
+	$path = get( $in, 'path', false, '@jn.init' );
+	$name = get( $in, 'name', false, '@jn.init' );
+	$key = get( $in, 'key', false );
+	$fn = get( $in, 'fn', 'strcmp' );
+
+	$path .= '/'.$name;
+	$offset = strlen( $path.'/data' );
+	$t = array();
+	$result = array();
+
+	if( $key ){ 
+		$node = $path.'/head';
+		$dnode = $path.'/data';
+
+		// lookup block
+		tree_lookup( $key, $path, $node, $dnode, $fn );
+		if( $node == $path.'/head' ){
+			$node = tree_next_leaf( $path.'/head', $path.'/.', $t );
+		}
+
+		$ln = strlen( $key );
+	}
+	else {
+		$node = tree_next_leaf( $path.'/head', $path.'/.', $t );
+		//$node = $path.'/head'.substr( $node, $offset );
+	}
+
+	$flag = true;
+	while( $flag && $node ){
+		$head = json_decode( @file_get_contents( $node ), true );
+		if( !$head ) break;
+
+		$data = @file_get_contents( $path.'/data'.substr( $node, $offset ) );
+
+		foreach( $head[ '_order' ] as $k ){
+			if( $key ){
+				$ks = substr( $k, 0, $ln );
+				if( $ks < $key )
+					continue;
+				elseif( $ks != $key ){
+					$flag = false;
+					break;
+				}
+			}
+
+			list( $pos, $len ) = $head[ $k ];
+			$result[ $k ] = substr( $data, $pos, $len );
+		}
+
+		$node = tree_next_leaf( $path, $node, $t );
+	}
+
+	return success( array( 'data' => $result ), 'Valid All JN' );
 }
 
 

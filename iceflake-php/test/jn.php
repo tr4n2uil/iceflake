@@ -9,8 +9,7 @@ $iconfig[ 'ns' ] = array(
 
 $iconfig[ 'mappings' ] = array(
 	//'jncr' => array( IEROOT.'jn/control.php', 'jn_create', array( 'path' ) ),
-	'get' => array( IEROOT.'fs/journal.php', 'jn_data', array( 'key' ), array( 'path' => 'db', 'name' => get( $argv, 3, 'jntest' ) ) ),
-	'set' => array( IEROOT.'fs/journal.php', 'jn_data', array( 'key', 'data' ), array( 'path' => 'db', 'name' => get( $argv, 3, 'jntest' ) ) ),
+	'jn' => array( IEROOT.'fs/journal.php', 'jn_data', array( 'key' ), array( 'path' => 'db', 'name' => get( $argv, 3, 'jntest' ) ) ),
 	'io' => array( IEROOT.'io/server.php', 'io_server', array( 'port' ), array( 'family' => 'ipv4', 'type' => 'stream', 'protocol' => 'tcp', 'address' => get( $argv, 1, '127.0.0.1' ) ) )
 );
 
