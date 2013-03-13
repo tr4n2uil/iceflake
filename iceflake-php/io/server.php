@@ -64,7 +64,9 @@ function io_server( $in ){
 	    fail( "Couldn't create socket: [$errorcode] ". socket_strerror( $errorcode ) );
 	}
 
-	if( !socket_bind( $socket, get( $in, 'address', '/tmp/iceflake' ), get( $in, 'port', 0 ) ) ){
+	$address = get( $in, 'address', '/tmp/iceflake' );
+	$port = get( $in, 'port', 0 );
+	if( !socket_bind( $socket, $address, $port ) ){
 		$errorcode = socket_last_error();
 	    fail( "Couldn't bind socket: [$errorcode] ". socket_strerror( $errorcode ) );
 	}
@@ -75,19 +77,29 @@ function io_server( $in ){
 	}
 
 	socket_set_block( $socket );
-	$timeout = get( $in, 'timeout', false );
+	$timeout = get( $in, 'timeout', null );
 	if( $timeout ){
 		socket_set_option( $socket, SOL_SOCKET, SO_SNDTIMEO, array( "sec" => $timeout, "usec" => 0 ) );
+		socket_set_option( $socket, SOL_SOCKET, SO_RCVTIMEO, array( "sec" => $timeout, "usec" => 0 ) );
 		socket_set_option( $socket, SOL_SOCKET, SO_LINGER, array( "l_onoff" => 1, "l_linger" => 1 ) );
 	}
+
+	echo "[".date("Y-m-d H:i:s")."] [$address:$port] IO Server Started\n";
 	
-	$start = time();
+	$end = time() + $timeout;
+	$r = array( $socket );
+	$w = null;
+	$e = null;
+
+	if( $timeout && !socket_select( $r, $w, $e, $timeout ) )
+		die( "[".date("Y-m-d H:i:s")."] [$address:$port] Server Timeout Error\n" );
+	
 	while( $conn = socket_accept( $socket ) ) {
 		socket_getpeername( $conn, $address, $port );
 		$pid = pcntl_fork();
 
-		if( $pid == -1 ){ 
-        	echo "[".date("Y-m-d H:i:s")."] [$address:$port] Fork Failure\n"; 
+		if( $pid == -1 ){
+        	echo "[".date("Y-m-d H:i:s")."] [$address:$port] Fork Failure\n";
         	die( 'Error Forking Child Process' );
     	}
     	elseif( $pid == 0 ){
@@ -97,12 +109,29 @@ function io_server( $in ){
 	    	}
 	    	elseif( $pid2 == 0 ){
 	    		socket_close( $socket ); 
-	        
+
+	        	$r = array( $conn );
+	        	$w = null;
+	        	$e = null;
+	        	if( $timeout && !socket_select( $r, $w, $e, $end - time() ) ){
+	        		socket_close( $conn );  
+	        		die( "[".date("Y-m-d H:i:s")."] [$address:$port] Connection Timeout Error\n" );
+	        	}
+	        	
 	        	$data = '';
 				$buf = socket_read( $conn, 1024, PHP_NORMAL_READ );
-				while( $buf != "" && $buf[ 0 ] != "\n" ){
+				$buf .= socket_read( $conn, 1 );
+
+				while( $buf != "" && $buf[ 0 ] != "\r" ){
 					$data .= $buf;
+
+					if( $timeout && !socket_select( $r, $w, $e, $end - time() ) ){
+		        		socket_close( $conn );  
+		        		die( "[".date("Y-m-d H:i:s")."] [$address:$port] Connection Timeout Error\n" );
+		        	}
+
 					$buf = socket_read( $conn, 1024, PHP_NORMAL_READ );
+					$buf .= socket_read( $conn, 1 );
 				}
 				
 				$data = trim( $data );
@@ -110,11 +139,12 @@ function io_server( $in ){
 
 				$in[ 'data' ] = $data;
 				$res = call_user_func( get( $in, 'fn', 'fn_trigger' ), $in );
+				//socket_write( $conn, "HTTP/1.1 200 OK\nServer: Apache/2.2.22 (Unix) DAV/2 PHP/5.3.15 with Suhosin-Patch\nLast-Modified: Thu, 28 Feb 2013 07:31:25 GMT\nContent-Type: text/html\n\nDATA\n\n"/*.$res*/ );
 				socket_write( $conn, $res );
 
 				@socket_shutdown( $conn, 2 );
 				socket_close( $conn );  
-				
+
 				exit();
 	    	}
 	    	else {
@@ -124,9 +154,15 @@ function io_server( $in ){
     	else { 
     		socket_close( $conn ); 
     		pcntl_waitpid( $pid, $status );
+    		$time = time();
 
-        	if( $timeout && time() - $start < $timeout )
+        	if( $timeout && ( $time > $end ) )
 				break;
+
+        	if( $timeout && !socket_select( $r, $w, $e, $end - $time ) ){
+        		echo "[".date("Y-m-d H:i:s")."] [$address:$port] Server Timeout Error\n";
+        		break;
+        	}
 		}
 	}
 
@@ -135,7 +171,7 @@ function io_server( $in ){
 	socket_close( $socket );
 
 	if( $family == AF_UNIX )
-		unlink( get( $in, 'address', '/tmp/iceflake' ) );
+		unlink( $address );
 
 	return $in;
 }

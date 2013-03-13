@@ -9,8 +9,9 @@ $iconfig[ 'ns' ] = array(
 
 $iconfig[ 'mappings' ] = array(
 	//'jncr' => array( IEROOT.'jn/control.php', 'jn_create', array( 'path' ) ),
-	'get' => array( IEROOT.'jn/control.php', 'jn_get', array( 'key' ), array( 'path' => get( $argv, 3, 'db/test' ) ) ),
-	'set' => array( IEROOT.'jn/control.php', 'jn_set', array( 'key', 'data' ), array( 'path' => get( $argv, 3, 'db/test' ) ) )
+	'get' => array( IEROOT.'fs/journal.php', 'jn_data', array( 'key' ), array( 'path' => 'db', 'name' => get( $argv, 3, 'jntest' ) ) ),
+	'set' => array( IEROOT.'fs/journal.php', 'jn_data', array( 'key', 'data' ), array( 'path' => 'db', 'name' => get( $argv, 3, 'jntest' ) ) ),
+	'io' => array( IEROOT.'io/server.php', 'io_server', array( 'port' ), array( 'family' => 'ipv4', 'type' => 'stream', 'protocol' => 'tcp', 'address' => get( $argv, 1, '127.0.0.1' ) ) )
 );
 
 $iconfig[ 'jn' ] = array(
@@ -24,8 +25,9 @@ io_server( array(
 	'family' => 'ipv4',
 	'type' => 'stream',
 	'protocol' => 'tcp',
-	'address' => get( $argv, 1, '127.0.0.1' ),
-	'port' => get( $argv, 2, '8080' )
+	'address' => get( $argv, 2, '127.0.0.1' ),
+	'port' => get( $argv, 3, '8080' ),
+	'timeout' => get( $argv, 1, null )
 ) );
 
 //require_once( IEROOT.'fn/trigger.php' );

@@ -8,6 +8,7 @@ Subsystems
 	IO:		Input/Output
 	NS:		Name Service
 	RT:		Runtime
+	FS:		File System
 	JN:		Journal
 	FN:		Callback
 	SI:		Smart Interface
