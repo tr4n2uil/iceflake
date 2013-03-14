@@ -158,81 +158,103 @@ function jn_data( $in ){
 		$dnode .= '/'.$key;
 	}
 	
-	// read block header
-	$head = @file_get_contents( $node );
-	if( $head )
-		$head = json_decode( $head, true );
-	else
-		$head = array( '_order' => array() );
-	$order = $head[ '_order' ];
+	// lock
+	$fp = fopen( $node, 'r+' );
+	if( ( $data && flock( $fp, LOCK_EX ) ) || ( !$data && flock( $fp, LOCK_SH ) ) ){
+		// read block header
+		$head = @file_get_contents( $node );
+		if( $head )
+			$head = json_decode( $head, true );
+		else
+			$head = array( '_order' => array() );
 
-	if( $data ){
-		$pos = array_search_lower( $key, $order, $fn );
+		if( $head )
+			$order = $head[ '_order' ];
+		else {
+			flock( $fp, LOCK_UN );
+			fclose( $fp );
+			return fail( 'Error Reading Header', "FILE: $node @jn.data" );
+		}
 
-		// split block
-		if( $pos !== false && $order ){
-			$next = $order[ $pos + 1 ];
-			$len = $head[ $next ][ 0 ];
+		if( $data ){
+			$pos = array_search_lower( $key, $order, $fn );
 
-			// copy right data
-			$rdata = @file_get_contents( $dnode, false, null, $len );
-			file_put_contents( dirname( $dnode ).'/'.$next, $rdata );
+			// split block
+			if( $pos !== false && $order ){
+				$next = $order[ $pos + 1 ];
+				$len = $head[ $next ][ 0 ];
 
-			// partition headers
-			$nxhead = array();
-			$nxorder = array_slice( $order, $pos + 1 );
-			foreach( $nxorder as $k ){
-				$nxhead[ $k ] = array( $head[ $k ][ 0 ] - $len, $head[ $k ][ 1 ] );
-				unset( $head[ $k ] );
+				// copy right data
+				$rdata = @file_get_contents( $dnode, false, null, $len );
+				file_put_contents( dirname( $dnode ).'/'.$next, $rdata );
+
+				// partition headers
+				$nxhead = array();
+				$nxorder = array_slice( $order, $pos + 1 );
+				foreach( $nxorder as $k ){
+					$nxhead[ $k ] = array( $head[ $k ][ 0 ] - $len, $head[ $k ][ 1 ] );
+					unset( $head[ $k ] );
+				}
+
+				$head[ '_order' ] = array_slice( $order, 0, $pos + 1 );
+				$nxhead[ '_order' ] = $nxorder;
+				$nxhead = json_encode( $nxhead );
+
+				// save headers
+				file_put_contents( dirname( $node ).'/'.$next, $nxhead );
+				file_put_contents( $node, json_encode( $head ) );
+
+				// truncate left data
+				$f = @fopen( $dnode, 'r+' );
+				ftruncate( $f, $len );
+				fclose( $f );
 			}
 
-			$head[ '_order' ] = array_slice( $order, 0, $pos + 1 );
-			$nxhead[ '_order' ] = $nxorder;
-			$nxhead = json_encode( $nxhead );
+			// append data
+			$pos = ( int ) @filesize( $dnode );
+			$len = file_put_contents( $dnode, $data, FILE_APPEND );
 
-			// save headers
-			file_put_contents( dirname( $node ).'/'.$next, $nxhead );
-			file_put_contents( $node, json_encode( $head ) );
+			if( $len === false ){
+				flock( $fp, LOCK_UN );
+				fclose( $fp );
+				return fail( 'Error Appending to File', 'Error appending data : '. $data .' to file: '.$dnode );
+			}
 
-			// truncate left data
-			$f = @fopen( $dnode, 'r+' );
-			ftruncate( $f, $len );
-			fclose( $f );
+			// modify header
+			$head[ $key ] = array( $pos, $len );
+			if( array_search( $key, $head[ '_order' ] ) === false )
+				$head[ '_order' ][] = $key;
+
+			$head = json_encode( $head );
+			file_put_contents( $node, $head );
+
+			// balance
+			tree_balance( $path.'/head', dirname( $node ), $fn );
+			tree_balance( $path.'/data', dirname( $dnode ), $fn );
 		}
+		else {
+			// read block data
+			if( !isset( $head[ $key ] ) ){
+				flock( $fp, LOCK_UN );
+				fclose( $fp );
+				return fail( 'Key Not Found', 'Error reading data for key: '.$key.' @jn.read' );
+			}
 
-		// append data
-		$pos = ( int ) @filesize( $dnode );
-		$len = file_put_contents( $dnode, $data, FILE_APPEND );
-
-		if( $len === false ){
-			return fail( 'Error Appending to File', 'Error appending data : '. $data .' to file: '.$dnode );
+			list( $pos, $len ) = $head[ $key ];
+			$data = @file_get_contents( $dnode, false, null, $pos, $len );
+			if( $data === false ){
+				flock( $fp, LOCK_UN );
+				fclose( $fp );
+				return fail( 'Error Reading File', 'Error reading file: '.$dnode );
+			}
 		}
-
-		// modify header
-		$head[ $key ] = array( $pos, $len );
-		if( array_search( $key, $head[ '_order' ] ) === false )
-			$head[ '_order' ][] = $key;
-
-		$head = json_encode( $head );
-		file_put_contents( $node, $head );
-
-		// balance
-		tree_balance( $path.'/head', dirname( $node ), $fn );
-		tree_balance( $path.'/data', dirname( $dnode ), $fn );
+		flock( $fp, LOCK_UN );
 	}
 	else {
-		// read block data
-		if( !isset( $head[ $key ] ) ){
-			return fail( 'Key Not Found', 'Error reading data for key: '.$key.' @jn.read' );
-		}
-
-		list( $pos, $len ) = $head[ $key ];
-		$data = @file_get_contents( $dnode, false, null, $pos, $len );
-		if( $data === false ){
-			return fail( 'Error Reading File', 'Error reading file: '.$dnode );
-		}
+		return fail( 'Error Acquiring Lock', "FILE: $node @jn_data" );
 	}
 
+	fclose( $fp );
 	return success( array( 'data' => $data ), 'Valid Data JN' );
 }
 
@@ -248,9 +270,10 @@ function jn_all( $in ){
 	$fn = get( $in, 'fn', 'strcmp' );
 
 	$path .= '/'.$name;
-	$offset = strlen( $path.'/data' );
+	//$offset = strlen( $path.'/data' );
 	$t = array();
 	$result = array();
+	$keys = array();
 
 	if( $key ){ 
 		$node = $path.'/head';
@@ -259,23 +282,37 @@ function jn_all( $in ){
 		// lookup block
 		tree_lookup( $key, $path, $node, $dnode, $fn );
 		if( $node == $path.'/head' ){
+			$dnode = tree_next_leaf( $path, $path.'/.', $t );
 			$node = tree_next_leaf( $path.'/head', $path.'/.', $t );
 		}
 
 		$ln = strlen( $key );
 	}
 	else {
+		$dnode = tree_next_leaf( $path, $path.'/.', $t );
 		$node = tree_next_leaf( $path.'/head', $path.'/.', $t );
 		//$node = $path.'/head'.substr( $node, $offset );
 	}
 
 	$flag = true;
-	while( $flag && $node ){
-		$head = json_decode( @file_get_contents( $node ), true );
-		if( !$head ) break;
+	while( $flag && $node && $dnode ){
+		//echo "NODE: $node\nDNODE: $dnode\n";
+		// lock
+		$fp = fopen( $node, 'r+' );
+		if( flock( $fp, LOCK_SH ) ){
+			$head = json_decode( @file_get_contents( $node ), true );
+			
+			if( !$head ) break;
+			$data = @file_get_contents( $dnode );
 
-		$data = @file_get_contents( $path.'/data'.substr( $node, $offset ) );
+			flock( $fp, LOCK_UN );
+		}
+		else {
+			return fail( 'Error Acquiring Lock', "FILE: $node @jn_data" );
+		}
 
+		fclose( $fp );
+		
 		foreach( $head[ '_order' ] as $k ){
 			if( $key ){
 				$ks = substr( $k, 0, $ln );
@@ -288,14 +325,51 @@ function jn_all( $in ){
 			}
 
 			list( $pos, $len ) = $head[ $k ];
+			$keys[] = $k;
 			$result[ $k ] = substr( $data, $pos, $len );
 		}
 
 		$node = tree_next_leaf( $path, $node, $t );
+		$dnode = tree_next_leaf( $path, $dnode, $t );
 	}
 
-	return success( array( 'data' => $result ), 'Valid All JN' );
+	return success( array( 'data' => $result, 'keys' => $keys ), 'Valid All JN' );
 }
+
+
+/**
+ *	@service jn_id
+ *	@params
+ *	@result 
+**/
+function jn_id( $in ){
+	$path = get( $in, 'path', false, '@jn.init' );
+	$name = get( $in, 'name', false, '@jn.init' );
+	$auto = get( $in, 'auto', false );
+
+	$path .= '/'.$name.'/id';
+
+	$fp = fopen( $path, 'c+' );
+	if( flock( $fp, LOCK_EX ) ){
+		$id = fread( $fp, 1024 );
+		if( !$id )
+			$id = "1";
+
+		$id = ( int ) $id;
+		rewind( $fp );
+		ftruncate( $fp, 0 );
+		
+		fwrite( $fp, ( string ) ( $auto ? $auto : ( $id + 1 ) ) );
+		flock( $fp, LOCK_UN );
+	}
+	else {
+		return fail( 'Error Acquiring Lock', "FILE: $path @jn_data" );
+	}
+
+	fclose( $fp );
+	return success( array( 'id' => $id ), 'Valid Id JN' );
+}
+
 
 
 ?>
