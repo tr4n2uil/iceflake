@@ -41,6 +41,9 @@ function tree_next_leaf( $root, $current, &$table ){
 	while( is_dir( $parent ) ){
 		if( !isset( $table[ $parent ] ) ){
 			$files = array_slice( scandir( $parent ), 2 );
+			if( !$files )
+				return false;
+
 			$table[ $parent ] = $files; // array_slice( $files, array_search( basename( $current ), $files ) );
 		}
 		$parent .= '/'.$table[ $parent ][ 0 ];
@@ -92,7 +95,7 @@ function tree_balance( $pathfull, $node, $fn = 'strcmp' ){
 }
 
 //	@helper
-function tree_lookup( $key, $path, &$node, &$dnode, $fn = 'strcmp' ){
+function tree_lookup( $key, $path, &$node, $fn = 'strcmp' ){
 	while( $files = array_slice( scandir( $node ), 2 ) ){
 		usort( $files, $fn );
 
@@ -105,7 +108,6 @@ function tree_lookup( $key, $path, &$node, &$dnode, $fn = 'strcmp' ){
 			break;
 
 		$node .= '/'.$files[ $pos ];
-		$dnode .= '/'.$files[ $pos ];
 		
 		if( !is_dir( $node ) )
 			break;
@@ -113,11 +115,11 @@ function tree_lookup( $key, $path, &$node, &$dnode, $fn = 'strcmp' ){
 }
 
 /**
- *	@service jn_init
+ *	@service jn_new
  *	@params
  *	@result 
 **/
-function jn_init( $in ){
+function jn_new( $in ){
 	$path = get( $in, 'path', false, '@jn.init' );
 	$name = get( $in, 'name', false, '@jn.init' );
 
@@ -128,10 +130,10 @@ function jn_init( $in ){
 	if( !mkdir( $path.'/data', 0777, true ) )
 		return fail( 'Error Making Directory', 'Error mkdir : '. $path .'/data' );
 
-	if( !mkdir( $path.'/head', 0777, true ) )
-		return fail( 'Error Making Directory', 'Error mkdir : '. $path .'/head' );
+	//if( !mkdir( $path.'/head', 0777, true ) )
+	//	return fail( 'Error Making Directory', 'Error mkdir : '. $path .'/head' );
 	
-	return success( array(), 'Valid Init JN' );
+	return success( array(), 'Valid New JN' );
 }
 
 /**
@@ -147,6 +149,161 @@ function jn_data( $in ){
 	$fn = get( $in, 'fn', 'strcmp' );
 
 	$path .= '/'.$name;
+	$node = $path.'/data';
+
+	// lookup key
+	tree_lookup( $key, $path, $node, $fn );
+
+	// insert new at start
+	if( $node == $path.'/data' ){
+		$t = array();
+		$tmp = tree_next_leaf( $path, $path.'/.', $t );
+
+		if( $tmp )
+			$tmp = explode( '/', substr( $tmp, strlen( $node ) + 1 ) );
+		else
+			$tmp = array( $key );
+
+		foreach( $tmp as $k ){
+			$node .= '/'.$key;
+		}
+
+		$parent = dirname( $node );
+		if( !is_dir( $parent ) ){
+			mkdir( $parent, 0777, true );
+		}
+	}
+
+	// ensure file key match
+	if( basename( $node ) != $key )
+		$node = dirname( $node ).'/'.$key;
+
+	// open file lock
+	$fp = fopen( $node, 'c+' );
+	if( $data && flock( $fp, LOCK_EX ) ){
+		// write data
+		$len = file_put_contents( $node, $data );
+		flock( $fp, LOCK_UN );
+
+		// exit on error
+		if( $len === false ){
+			fclose( $fp );
+			return fail( 'Error Writing to File', 'Error writing data : '. $data .' to file: '.$node );
+		}
+
+		// balance
+		tree_balance( $path.'/data', dirname( $node ), $fn );
+	}
+	elseif( !$data && flock( $fp, LOCK_SH ) ){
+		// read data
+		$data = @file_get_contents( $node );
+		flock( $fp, LOCK_UN );
+
+		// exit on error
+		if( $data === false ){
+			fclose( $fp );
+			return fail( 'Error Reading from File', 'Error reading from file: '.$node );
+		}
+	}
+	else {
+		return fail( 'Error Acquiring Lock', "FILE: $node @jn_data" );
+	}
+
+	// close file lock
+	fclose( $fp );
+	return success( array( 'data' => $data ), 'Valid Data JN' );
+
+}
+
+/**
+ *	@service jn_all
+ *	@params
+ *	@result 
+**/
+function jn_all( $in ){
+	$path = get( $in, 'path', false, '@jn.init' );
+	$name = get( $in, 'name', false, '@jn.init' );
+	$key = get( $in, 'key', false );
+	$fn = get( $in, 'fn', 'strcmp' );
+
+	$path .= '/'.$name;
+	//$offset = strlen( $path.'/data' );
+	$t = array();
+	$result = array();
+	$keys = array();
+
+	if( $key ){ 
+		$node = $path.'/data';
+
+		// lookup block
+		tree_lookup( $key, $path, $node, $fn );
+		if( $node == $path.'/data' ){
+			$node = tree_next_leaf( $path.'/data', $path.'/.', $t );
+		}
+
+		$ln = strlen( $key );
+	}
+	else {
+		// find first
+		$node = tree_next_leaf( $path.'/data', $path.'/.', $t );
+	}
+
+	$flag = true;
+	while( $flag && $node ){
+		$k = basename( $node );
+
+		// check bounds
+		if( $key ){
+			$ks = substr( $k, 0, $ln );
+			if( $ks < $key ){
+				$node = tree_next_leaf( $path, $node, $t );
+				continue;
+			}
+			elseif( $ks != $key ){
+				$flag = false;
+				break;
+			}
+		}
+
+
+		// lock
+		$fp = fopen( $node, 'r+' );
+		if( flock( $fp, LOCK_SH ) ){
+			$data = @file_get_contents( $node );
+			flock( $fp, LOCK_UN );
+		}
+		else {
+			return fail( 'Error Acquiring Lock', "FILE: $node @jn_data" );
+		}
+
+		fclose( $fp );
+		if( $data ){
+			$k = basename( $node );
+			$keys[] = $k;
+			$result[ $k ] = $data;
+		}
+
+		// proceed to next
+		$node = tree_next_leaf( $path, $node, $t );
+	}
+
+	return success( array( 'data' => $result, 'keys' => $keys ), 'Valid All JN' );
+}
+
+
+/**
+ *	@service jn_data
+ *	@params
+ *	@result 
+**/
+function jn_data_old( $in ){
+	$path = get( $in, 'path', false, '@jn.init' );
+	$name = get( $in, 'name', false, '@jn.init' );
+	$key = get( $in, 'key', false, '@jn.init' );
+	$data = get( $in, 'data', false );
+	$fn = get( $in, 'fn', 'strcmp' );
+
+	$path .= '/'.$name;
 	$node = $path.'/head';
 	$dnode = $path.'/data';
 
@@ -154,12 +311,28 @@ function jn_data( $in ){
 	tree_lookup( $key, $path, $node, $dnode, $fn );
 
 	if( $node == $path.'/head' ){
-		$node .= '/'.$key;
-		$dnode .= '/'.$key;
+		$t = array();
+		$tmp = tree_next_leaf( $path, $path.'/.', $t );
+
+		if( $tmp )
+			$tmp = explode( '/', substr( $tmp, strlen( $dnode ) + 1 ) );
+		else
+			$tmp = array( $key );
+
+		foreach( $tmp as $k ){
+			$node .= '/'.$key;
+			$dnode .= '/'.$key;
+		}
+
+		$parent = dirname( $node );
+		if( !is_dir( $parent ) ){
+			mkdir( $parent, 0777, true );
+			mkdir( dirname( $dnode ), 0777, true );
+		}
 	}
 	
 	// lock
-	$fp = fopen( $node, 'r+' );
+	$fp = fopen( $node, 'c+' );
 	if( ( $data && flock( $fp, LOCK_EX ) ) || ( !$data && flock( $fp, LOCK_SH ) ) ){
 		// read block header
 		$head = @file_get_contents( $node );
@@ -210,8 +383,20 @@ function jn_data( $in ){
 				fclose( $f );
 			}
 
+			// split onmax
+			global $iconfig;
+			$mx = get( get( $iconfig, 'jn', array() ), 'maxfsize', 4294967296 );
+			$size = ( int ) @filesize( $dnode );
+
+			if( ( $size + strlen( $data ) ) > $mx ){
+				$size = 0;
+				$head = array( '_order' => array() );
+				$node = dirname( $node ).'/'.$key;
+				$dnode = dirname( $dnode ).'/'.$key;
+			}
+
 			// append data
-			$pos = ( int ) @filesize( $dnode );
+			$pos = $size;
 			$len = file_put_contents( $dnode, $data, FILE_APPEND );
 
 			if( $len === false ){
@@ -263,7 +448,7 @@ function jn_data( $in ){
  *	@params
  *	@result 
 **/
-function jn_all( $in ){
+function jn_all_old( $in ){
 	$path = get( $in, 'path', false, '@jn.init' );
 	$name = get( $in, 'name', false, '@jn.init' );
 	$key = get( $in, 'key', false );
@@ -358,7 +543,7 @@ function jn_id( $in ){
 		$id = ( int ) $id;
 		rewind( $fp );
 		ftruncate( $fp, 0 );
-		
+
 		fwrite( $fp, ( string ) ( $auto ? $auto : ( $id + 1 ) ) );
 		flock( $fp, LOCK_UN );
 	}

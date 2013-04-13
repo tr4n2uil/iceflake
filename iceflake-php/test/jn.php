@@ -9,12 +9,15 @@ $iconfig[ 'ns' ] = array(
 
 $iconfig[ 'mappings' ] = array(
 	//'jncr' => array( IEROOT.'jn/control.php', 'jn_create', array( 'path' ) ),
-	'jn' => array( IEROOT.'fs/journal.php', 'jn_data', array( 'key', 'data' ), array( 'path' => 'db', 'name' => get( $argv, 3, 'jntest' ) ) ),
+	'data' => array( IEROOT.'fs/journal.php', 'jn_data', array( 'name', 'key', 'data' ), array( 'path' => 'db' ) ),
+	'all' => array( IEROOT.'fs/journal.php', 'jn_all', array( 'name', 'key', 'data' ), array( 'path' => 'db' ) ),
+	'new' => array( IEROOT.'fs/journal.php', 'jn_new', array( 'name' ), array( 'path' => 'db' ) ),
 	'io' => array( IEROOT.'io/server.php', 'io_server', array( 'port' ), array( 'family' => 'ipv4', 'type' => 'stream', 'protocol' => 'tcp', 'address' => get( $argv, 1, '127.0.0.1' ) ) )
 );
 
 $iconfig[ 'jn' ] = array(
-	'bfactor' => 5
+	'bfactor' => 5,
+	// 'maxfsize' => 15 @tested
 );
 
 $iconfig[ 'die' ] = false;
