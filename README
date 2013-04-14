@@ -9,7 +9,6 @@ Subsystems
 	NS:		Name Service
 	RT:		Runtime
 	FS:		File System
-	JN:		Journal
 	FN:		Callback
 	SI:		Smart Interface
 	UI:		User Interface
@@ -29,7 +28,7 @@ Inspirations:
 	IO:		Yahoo! Buzz
 	NS:		TPR Executive
 	RT:		GSoC 2011 DSpace RESTClient
-	JN:		Yahoo! Graph
+	FS:		Yahoo! Graph
 	FN:		Yahoo! Buzz
 	SI:		FireSpark
 	UI:		Orbitnote

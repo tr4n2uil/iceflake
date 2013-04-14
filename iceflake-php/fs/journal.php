@@ -259,7 +259,7 @@ function jn_all( $in ){
 	$flag = true;
 	while( $flag && $node ){
 		$k = basename( $node );
-		echo $node;
+		//echo $node;
 
 		// check bounds
 		if( $key ){
