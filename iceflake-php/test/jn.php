@@ -11,7 +11,7 @@ $iconfig[ 'mappings' ] = array(
 	//'jncr' => array( IEROOT.'jn/control.php', 'jn_create', array( 'path' ) ),
 	'data' => array( IEROOT.'fs/journal.php', 'jn_data', array( 'name', 'key', 'data' ), array( 'path' => 'db' ) ),
 	'all' => array( IEROOT.'fs/journal.php', 'jn_all', array( 'name', 'key', 'data' ), array( 'path' => 'db' ) ),
-	'new' => array( IEROOT.'fs/journal.php', 'jn_new', array( 'name' ), array( 'path' => 'db' ) ),
+	'new' => array( IEROOT.'fs/journal.php', 'jn_new', array( 'name', 'chunksize' ), array( 'path' => 'db' ) ),
 	'io' => array( IEROOT.'io/server.php', 'io_server', array( 'port' ), array( 'family' => 'ipv4', 'type' => 'stream', 'protocol' => 'tcp', 'address' => get( $argv, 1, '127.0.0.1' ) ) )
 );
 
