@@ -181,7 +181,10 @@ function jn_data( $in ){
 
 	// lookup key parent
 	$parent  = tree_lookup( $key, $path, $node, $conf, $fn, true );
-	$node = $parent. '/data.'. $key;
+	if( $conf[ 'chunksize' ] )
+		$node = $parent. '/data.'. $key;
+	else
+		$node = $parent. '/'. $key;
 	echo "PATH: $node\n";
 
 	$exists = is_file( $node );
@@ -253,6 +256,7 @@ function jn_all( $in ){
 	$conf = include( $path. '/db.conf' );
 	//$offset = strlen( $path.'/data' );
 	$t = array();
+	$keys = array();
 	$result = array();
 
 	if( $key ){ 
@@ -276,7 +280,10 @@ function jn_all( $in ){
 
 	$flag = true;
 	while( $flag && $node ){
-		$k = substr( basename( $node ), 5 );
+		$k = basename( $node );	
+		if( $conf[ 'chunksize' ] )
+			$k = substr( basename( $node ), 5 );
+
 		//echo $node;
 
 		// check bounds
@@ -294,7 +301,7 @@ function jn_all( $in ){
 
 		// find only keys
 		if( $action == 'keys' ){
-			$result[] = $k;
+			$keys[] = $k;
 		}
 		// find with data
 		else {
@@ -310,6 +317,7 @@ function jn_all( $in ){
 
 			fclose( $fp );
 			if( $data ){
+				$keys[] = $k;
 				$result[ $k ] = $data;
 			}
 		}
@@ -318,7 +326,7 @@ function jn_all( $in ){
 		$node = tree_next_leaf( $path, $node, $t, $fn );
 	}
 
-	return success( array( 'data' => $result ), 'Valid All JN' );
+	return success( array( 'data' => $result, 'keys' => $keys ), 'Valid All JN' );
 }
 
 /**

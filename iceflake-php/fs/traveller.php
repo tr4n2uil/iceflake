@@ -155,7 +155,7 @@ function tl_all( $in ){
 		}
 	}
 	else
-		$result = $msg[ 'data' ];
+		$result = $msg[ 'keys' ];
 
 	return success( array( 'data' => $result ), 'Valid All TL' );
 }

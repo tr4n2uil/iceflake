@@ -25,18 +25,19 @@ require_once( IEROOT.'fs/traveller.php' );
 echo json_encode( tl_data( array(
 	'path' => 'traveller',
 	'type' => 'node',
-	'key' => 'ghi',
-	'data' => array( 'name' => 'ghi', 'type' => 'node', 'title' => 'GHI' )
+	'key' => 'jkl',
+	'data' => array( 'name' => 'jkl', 'type' => 'node', 'title' => 'JKL' )
 ) ) )."\n";
 
 echo json_encode( tl_data( array(
 	'path' => 'traveller',
 	'type' => 'edge',
-	'key' => 'abc-ghi',
-	'data' => array( 'name' => 'abc-ghi', 'type' => 'edge', 'src' => 'abc', 'sink' => 'ghi' )
+	'key' => 'abc-jkl',
+	'data' => array( 'name' => 'abc-jkl', 'type' => 'edge', 'src' => 'abc', 'sink' => 'jkl' )
 ) ) )."\n";
 
-exit();*/
+exit();
+*/
 
 require_once( IEROOT. 'io/server.php' );
 io_server( array(
