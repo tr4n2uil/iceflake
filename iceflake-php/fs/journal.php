@@ -129,12 +129,7 @@ function tree_lookup( $key, $path, &$node, $conf, $fn = 'strcmp', $first = false
 		}
 	}
 
-	$parent = dirname( $node );
-	if( !is_dir( $parent ) ){
-		mkdir( $parent, 0777, true );
-	}
-
-	return $parent;
+	return dirname( $node );
 }
 
 /**
@@ -154,9 +149,7 @@ function jn_new( $in ){
 	if( !mkdir( $path.'/data', 0777, true ) )
 		return fail( 'Error Making Directory', 'Error mkdir : '. $path .'/data' );
 
-	file_put_contents( $path.'/db.conf', '<?php return '. var_export( array( 
-		'chunksize' => $chunksize 
-	), true ) .'; ?>' );
+	file_put_contents( $path.'/db.conf', '<?php return '. var_export( array( 'chunksize' => $chunksize ), true ) .'; ?>' );
 	
 	return success( array(), 'Valid New JN' );
 }
@@ -169,18 +162,42 @@ function jn_new( $in ){
 function jn_data( $in ){
 	$path = get( $in, 'path', false, '@jn.init' );
 	$name = get( $in, 'name', false, '@jn.init' );
-	$key = get( $in, 'key', false, '@jn.init' );
+	$key = get( $in, 'key', false );
 	$data = get( $in, 'data', false );
+	$action = get( $in, 'action', $data ? 'add' : 'get' );
 	$fn = get( $in, 'fn', 'strcmp' );
 
 	$path .= '/'.$name;
 	$node = $path.'/data';
 	$conf = include( $path. '/db.conf' );
 
-	// lookup key
+	// use auto id
+	if( !$key and $data ){
+		$msg = jn_id( $in );
+		if( !$msg[ 'valid' ] )
+			return $msg;
+		$key = $msg[ 'id' ];
+	}
+
+	// lookup key parent
 	$parent  = tree_lookup( $key, $path, $node, $conf, $fn, true );
-	$node = $parent. '/'. $key;
+	$node = $parent. '/data.'. $key;
 	echo "PATH: $node\n";
+
+	$exists = is_file( $node );
+	if( !$data and !$exists )
+		return fail( 'Key Not Found', "Key: $key not found at node $node" );
+
+	if( $action == 'exists' and $exists )
+		return success( 'Key Exists', "Key: $key found at node $node" );
+
+	if( $action == 'add' and $exists )
+		return fail( 'Key Already Exists', "Key: $key found at node $node" );
+
+	// create path
+	if( $action == 'add' and !is_dir( $parent ) ){
+		mkdir( $parent, 0777, true );
+	}
 
 	// open file lock
 	$fp = fopen( $node, 'c+' );
@@ -216,7 +233,7 @@ function jn_data( $in ){
 
 	// close file lock
 	fclose( $fp );
-	return success( array( 'data' => $data ), 'Valid Data JN' );
+	return success( array( 'data' => $data, 'key' => $key ), 'Valid Data JN' );
 
 }
 
@@ -229,6 +246,7 @@ function jn_all( $in ){
 	$path = get( $in, 'path', false, '@jn.init' );
 	$name = get( $in, 'name', false, '@jn.init' );
 	$key = get( $in, 'key', false );
+	$action = get( $in, 'action', $key ? 'find' : 'all' );
 	$fn = get( $in, 'fn', 'strcmp' );
 
 	$path .= '/'.$name;
@@ -258,7 +276,7 @@ function jn_all( $in ){
 
 	$flag = true;
 	while( $flag && $node ){
-		$k = basename( $node );
+		$k = substr( basename( $node ), 5 );
 		//echo $node;
 
 		// check bounds
@@ -274,22 +292,28 @@ function jn_all( $in ){
 			}
 		}
 
-		// lock
-		$fp = fopen( $node, 'r+' );
-		if( flock( $fp, LOCK_SH ) ){
-			$data = @file_get_contents( $node );
-			flock( $fp, LOCK_UN );
+		// find only keys
+		if( $action == 'keys' ){
+			$result[] = $k;
 		}
+		// find with data
 		else {
-			return fail( 'Error Acquiring Lock', "FILE: $node @jn_data" );
-		}
+			// lock
+			$fp = fopen( $node, 'r+' );
+			if( flock( $fp, LOCK_SH ) ){
+				$data = @file_get_contents( $node );
+				flock( $fp, LOCK_UN );
+			}
+			else {
+				return fail( 'Error Acquiring Lock', "FILE: $node @jn_data" );
+			}
 
-		fclose( $fp );
-		if( $data ){
-			$k = basename( $node );
-			$result[ $k ] = $data;
+			fclose( $fp );
+			if( $data ){
+				$result[ $k ] = $data;
+			}
 		}
-
+		
 		// proceed to next
 		$node = tree_next_leaf( $path, $node, $t, $fn );
 	}
