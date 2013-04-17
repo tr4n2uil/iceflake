@@ -9,7 +9,7 @@ $iconfig[ 'ns' ] = array(
 
 $iconfig[ 'mappings' ] = array(
 	'data' => array( IEROOT.'fs/traveller.php', 'tl_data', array( 'type', 'key', 'data' ), array( 'path' => 'traveller' ) ),
-	'all' => array( IEROOT.'fs/traveller.php', 'tl_all', array( 'type', 'key', 'data' ), array( 'path' => 'traveller' ) ),
+	'all' => array( IEROOT.'fs/traveller.php', 'tl_all', array( 'type', 'key' ), array( 'path' => 'traveller' ) ),
 	'new' => array( IEROOT.'fs/traveller.php', 'tl_new', array( 'type' ), array( 'path' => 'traveller' ) ),
 );
 

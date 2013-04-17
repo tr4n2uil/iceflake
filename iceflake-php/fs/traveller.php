@@ -74,6 +74,9 @@ function tl_data( $in ){
 		if( $msg[ 'valid' ] )
 			$lookup = $msg[ 'data' ];
 	}
+	elseif( $action == 'lookup' ){
+		$lookup = $key;
+	}
 
 	// write data
 	if( $data ){
@@ -127,83 +130,34 @@ function tl_data( $in ){
 **/
 function tl_all( $in ){
 	$path = get( $in, 'path', false, '@jn.init' );
-	$name = get( $in, 'name', false, '@jn.init' );
+	$type = get( $in, 'type', false );
 	$key = get( $in, 'key', false );
 	$action = get( $in, 'action', $key ? 'find' : 'all' );
-	$fn = get( $in, 'fn', 'strcmp' );
 
-	$path .= '/'.$name;
-	$conf = include( $path. '/db.conf' );
-	//$offset = strlen( $path.'/data' );
-	$t = array();
+	$conf = include( $path.'/schema/archive.conf' );
 	$result = array();
 
-	if( $key ){ 
-		$node = $path.'/data';
+	// lookup all keys to archive
+	$in[ 'name' ] = $type;
+	$msg = jn_all( $in );
+	if( !$msg[ 'valid' ] )
+		return $msg;
 
-		// lookup block
-		$parent = tree_lookup( $key, $path, $node, $conf, $fn );
-		if( $conf[ 'chunksize' ] ){
-			$node = tree_next_leaf( $path, $parent, $t, $fn );
+	if( $action != 'keys' ){
+		$in[ 'name' ] = $conf[ 'name' ];
+		foreach( $msg[ 'data' ] as $k => $val ){
+			$in[ 'key' ] = $val;
+			$in[ 'action' ] = 'get';
+			$msg = jn_data( $in );
+			if( !$msg[ 'valid' ] )
+				return $msg;
+			$result[ $k ] = $msg[ 'data' ];
 		}
-		elseif( $node == $path.'/data' ){
-			$node = tree_next_leaf( $path, $node, $t, $fn );
-		}
-		
-		$ln = strlen( $key );
 	}
-	else {
-		// find first
-		$node = tree_next_leaf( $path, $path.'/data', $t, $fn );
-	}
+	else
+		$result = $msg[ 'data' ];
 
-	$flag = true;
-	while( $flag && $node ){
-		$k = basename( $node );
-		//echo $node;
-
-		// check bounds
-		if( $key ){
-			$ks = substr( $k, 0, $ln );
-			if( $ks < $key ){
-				$node = tree_next_leaf( $path, $node, $t, $fn );
-				continue;
-			}
-			elseif( $ks != $key ){
-				$flag = false;
-				break;
-			}
-		}
-
-		// find only keys
-		if( $action == 'keys' ){
-			$k = basename( $node );
-			$result[] = $k;
-		}
-		// find with data
-		else {
-			// lock
-			$fp = fopen( $node, 'r+' );
-			if( flock( $fp, LOCK_SH ) ){
-				$data = @file_get_contents( $node );
-				flock( $fp, LOCK_UN );
-			}
-			else {
-				return fail( 'Error Acquiring Lock', "FILE: $node @jn_data" );
-			}
-
-			fclose( $fp );
-			if( $data ){
-				$k = basename( $node );
-				$result[ $k ] = $data;
-			}
-		}
-		
-		// proceed to next
-		$node = tree_next_leaf( $path, $node, $t, $fn );
-	}
-
-	return success( array( 'data' => $result ), 'Valid All JN' );
+	return success( array( 'data' => $result ), 'Valid All TL' );
 }
 
 
