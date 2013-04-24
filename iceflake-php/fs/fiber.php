@@ -9,13 +9,13 @@
 require_once( IEROOT.'fs/journal.php' );
 
 /**
- *	@service tl_new
+ *	@service fr_new
  *	@params
  *	@result 
 **/
-function tl_new( $in ){
-	$path = get( $in, 'path', false, '@jn.init' );
-	$type = get( $in, 'type', false, '@jn.init' );
+function fr_new( $in ){
+	$path = get( $in, 'path', false, '@fr.init' );
+	$type = get( $in, 'type', false, '@fr.init' );
 
 	// create new journal for type
 	$in[ 'name' ] = $type;
@@ -47,16 +47,16 @@ function tl_new( $in ){
 			return $msg;
 	}
 	
-	return success( array(), 'Valid New TL' );
+	return success( array(), 'Valid New FR' );
 }
 
 /**
- *	@service tl_data
+ *	@service fr_data
  *	@params
  *	@result 
 **/
-function tl_data( $in ){
-	$path = get( $in, 'path', false, '@jn.init' );
+function fr_data( $in ){
+	$path = get( $in, 'path', false, '@fr.init' );
 	$type = get( $in, 'type', false );
 	$key = get( $in, 'key', false );
 	$data = get( $in, 'data', false );
@@ -119,18 +119,18 @@ function tl_data( $in ){
 		$data = $msg[ 'data' ];
 	}
 
-	return success( array( 'data' => $data ), 'Valid Data TL' );
+	return success( array( 'data' => $data ), 'Valid Data FR' );
 
 }
 
 /**
- *	@service tl_all
+ *	@service fr_all
  *	@params
  *	@result 
 **/
-function tl_all( $in ){
-	$path = get( $in, 'path', false, '@jn.init' );
-	$type = get( $in, 'type', false );
+function fr_all( $in ){
+	$path = get( $in, 'path', false, '@fr.all' );
+	$type = get( $in, 'type', false, '@fr.all' );
 	$key = get( $in, 'key', false );
 	$action = get( $in, 'action', $key ? 'find' : 'all' );
 
@@ -157,7 +157,66 @@ function tl_all( $in ){
 	else
 		$result = $msg[ 'keys' ];
 
-	return success( array( 'data' => $result ), 'Valid All TL' );
+	return success( array( 'data' => $result ), 'Valid All FR' );
+}
+
+/**
+ *	@service fr_wave
+ *	@params
+ *	@result 
+**/
+function fr_wave( $in ){
+	$path = get( $in, 'path', false, '@fr.wave' );
+	$key = get( $in, 'key', false, '@fr.wave' );
+	$wave = get( $in, 'wave', false, '@fr.wave' );
+
+	$conf = include( $path.'/schema/archive.conf' );
+	$front = array( $key );
+	$result = array();
+
+	$pieces = explode( '__', $wave );
+	foreach( $pieces as $piece ){
+		// get type, bit and key
+		echo $piece;
+		list( $t, $b, $k ) = explode( '>', $piece );
+
+		// lookup all keys for bit
+		$in[ 'type' ] = $t;
+		$in[ 'action' ] = $k == 'keys' ? 'keys' : 'find';
+		
+		$result = array();
+		foreach( $front as $f ){
+			$in[ 'key' ] = $f.'.'.$b;
+			$msg = fr_all( $in );
+			if( !$msg[ 'valid' ] )
+				return $msg;
+
+			switch( $k ){
+				case 'keys':
+					$l = strlen( $f.'.'.$b ) + 1;
+					foreach( $msg[ 'data' ] as $d ){
+						$result[] = substr( $d, $l );
+					}
+					break;
+
+				case 'data':
+					$result = array_merge( $result, $msg[ 'data' ] );
+					break;
+
+				default:
+					foreach( $msg[ 'data' ] as $d ){
+						$d = json_decode( $d, true );
+						$result[] = $d[ $k ];
+					}
+					break;
+			}
+
+		}
+
+		$front = $result;
+	}
+
+	return success( array( 'data' => $result ), 'Valid Wave FR' );
 }
 
 

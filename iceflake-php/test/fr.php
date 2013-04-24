@@ -8,9 +8,10 @@ $iconfig[ 'ns' ] = array(
 );
 
 $iconfig[ 'mappings' ] = array(
-	'data' => array( IEROOT.'fs/traveller.php', 'tl_data', array( 'type', 'key', 'data' ), array( 'path' => 'traveller' ) ),
-	'all' => array( IEROOT.'fs/traveller.php', 'tl_all', array( 'type', 'key' ), array( 'path' => 'traveller' ) ),
-	'new' => array( IEROOT.'fs/traveller.php', 'tl_new', array( 'type' ), array( 'path' => 'traveller' ) ),
+	'data' => array( IEROOT.'fs/fiber.php', 'fr_data', array( 'type', 'key', 'data' ), array( 'path' => 'fiber' ) ),
+	'all' => array( IEROOT.'fs/fiber.php', 'fr_all', array( 'type', 'key' ), array( 'path' => 'fiber' ) ),
+	'wave' => array( IEROOT.'fs/fiber.php', 'fr_wave', array( 'key', 'wave' ), array( 'path' => 'fiber' ) ),
+	'new' => array( IEROOT.'fs/fiber.php', 'fr_new', array( 'type' ), array( 'path' => 'fiber' ) ),
 );
 
 $iconfig[ 'jn' ] = array(
@@ -21,16 +22,16 @@ $iconfig[ 'jn' ] = array(
 $iconfig[ 'die' ] = false;
 
 /*
-require_once( IEROOT.'fs/traveller.php' );
+require_once( IEROOT.'fs/fiber.php' );
 echo json_encode( tl_data( array(
-	'path' => 'traveller',
+	'path' => 'fiber',
 	'type' => 'node',
 	'key' => 'jkl',
 	'data' => array( 'name' => 'jkl', 'type' => 'node', 'title' => 'JKL' )
 ) ) )."\n";
 
 echo json_encode( tl_data( array(
-	'path' => 'traveller',
+	'path' => 'fiber',
 	'type' => 'edge',
 	'key' => 'abc-jkl',
 	'data' => array( 'name' => 'abc-jkl', 'type' => 'edge', 'src' => 'abc', 'sink' => 'jkl' )
