@@ -177,7 +177,6 @@ function fr_wave( $in ){
 	$pieces = explode( '__', $wave );
 	foreach( $pieces as $piece ){
 		// get type, bit and key
-		echo $piece;
 		list( $t, $b, $k ) = explode( '>', $piece );
 
 		// lookup all keys for bit
@@ -186,7 +185,7 @@ function fr_wave( $in ){
 		
 		$result = array();
 		foreach( $front as $f ){
-			$in[ 'key' ] = $f.'.'.$b;
+			$in[ 'key' ] = $b ? $f.'.'.$b : $f;
 			$msg = fr_all( $in );
 			if( !$msg[ 'valid' ] )
 				return $msg;

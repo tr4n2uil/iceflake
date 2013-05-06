@@ -30,11 +30,12 @@ echo json_encode( tl_data( array(
 	'data' => array( 'name' => 'jkl', 'type' => 'node', 'title' => 'JKL' )
 ) ) )."\n";
 
-echo json_encode( tl_data( array(
+require_once( IEROOT.'fs/fiber.php' );
+echo json_encode( fr_data( array(
 	'path' => 'fiber',
 	'type' => 'edge',
-	'key' => 'abc-jkl',
-	'data' => array( 'name' => 'abc-jkl', 'type' => 'edge', 'src' => 'abc', 'sink' => 'jkl' )
+	'key' => 'jkl-abc',
+	'data' => array( 'name' => 'jkl-abc', 'type' => 'edge', 'src' => 'jkl', 'sink' => 'abc' )
 ) ) )."\n";
 
 exit();
