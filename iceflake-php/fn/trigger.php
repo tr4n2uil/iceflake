@@ -19,12 +19,13 @@ function fn_trigger( $in, $key = false ){
 			break;
 
 		case 'mp':
-			$data = get( $iconfig, $data[ 0 ], false, 'mapping not found @fn_trigger' );
+			$data = get( $iconfig, $data[ 1 ], false, 'mapping not found @fn_trigger' );
 			break;
 
 		case 'js':
 			$data = json_decode( $data[ 1 ], true );
 			break;
+			
 		default:
 			$data = $data[ 0 ];
 			break;

@@ -68,7 +68,7 @@ iE.rt.navigator = function( $in ){
 			$path = $args[ 1 ].split( '/' );
 			$max = $path.length;
 			
-			for( var $i = 0; ( $i + 1 ) < $max; $i++ ){
+			for( var $i = 0; ( $i + 1 ) < $max; $i+=2 ){
 				$idef[ $path[ $i ] ] = iE.rt.parse( $path[ $i + 1 ] );
 			}
 		}

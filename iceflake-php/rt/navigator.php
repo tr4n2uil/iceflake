@@ -39,7 +39,7 @@ function rt_navigator( $in ){
 			$path = explode( '/', $args[ 1 ] );
 			$max = count( $path );
 			
-			for( $i = 0; ( $i + 1 ) < $max; $i++ ){
+			for( $i = 0; ( $i + 1 ) < $max; $i+=2 ){
 				$idef[ $path[ $i ] ] = rt_parse( $path[ $i + 1 ] );
 			}
 		}
