@@ -1,7 +1,7 @@
 import json
 import os
 
-# fiber.Journal
+# fs.Journal
 class Journal:
 
 	# constructor
@@ -18,7 +18,7 @@ class Journal:
 			os.makedirs( self.path + '/data' )
 			os.makedirs( self.path + '/counters' )
 			with file( path + '/db.conf', 'w' ) as f:
-				s = '{"chunk":' + chunk + ',"prelen":' + prelen + '}'
+				s = '{"chunk":' + str( chunk ) + ',"prelen":' + str( prelen ) + '}'
 				f.write( s )
 
 		# set conf
@@ -165,3 +165,8 @@ class Journal:
 			f.write( '%f' % s )
 
 		return s
+
+
+# fs.Fiber
+#class Fiber:
+

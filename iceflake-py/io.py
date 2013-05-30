@@ -2,7 +2,7 @@ import datetime
 import socket
 import thread
 
-import runtime
+import rt
 
 
 # flow.Server
@@ -10,7 +10,7 @@ class Server:
 
 	# constructor
 	def __init__( self, conf, host = 'localhost', port = '8000' ):
-		self.proxy = runtime.Proxy( conf )
+		self.proxy = rt.Proxy( conf )
 		
 		sock = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
 		sock.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
